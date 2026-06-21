@@ -1,9 +1,8 @@
 import os
 import tempfile
 import subprocess
-import shutil
 import base64
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
@@ -28,7 +27,7 @@ async def download_audio(url: str = Query(..., description="URL do YouTube")):
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
             output_path = tmp.name
 
-        # Comando com cookies, deno e o novo argumento obrigatório
+        # Comando simplificado – sem flags JS, pois yt-dlp-ejs resolve automaticamente
         cmd = [
             "yt-dlp",
             "-x", "--audio-format", "mp3",
@@ -36,11 +35,19 @@ async def download_audio(url: str = Query(..., description="URL do YouTube")):
             "-o", output_path,
             "--no-playlist",
             "--cookies", COOKIES_FILE,
-            "--js-runtimes", "deno",
-            "--remote-components", "ejs:github",  # <-- CORREÇÃO ADICIONADA
             url
         ]
-        subprocess.run(cmd, check=True, capture_output=True, timeout=300)
+
+        # Fallback opcional: se falhar, tenta com --remote-components ejs:npm
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, timeout=300)
+        except subprocess.CalledProcessError as e:
+            # Se o erro mencionar "Requested format is not available", tenta o fallback
+            if "Requested format is not available" in e.stderr.decode('utf-8'):
+                cmd_fallback = cmd + ["--remote-components", "ejs:npm"]
+                subprocess.run(cmd_fallback, check=True, capture_output=True, timeout=300)
+            else:
+                raise
 
         if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
             with open(output_path, "rb") as f:
