@@ -28,15 +28,16 @@ async def download_audio(url: str = Query(..., description="URL do YouTube")):
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
             output_path = tmp.name
 
-        # Comando com cookies e deno
+        # Comando com cookies, deno e o novo argumento obrigatório
         cmd = [
             "yt-dlp",
             "-x", "--audio-format", "mp3",
             "--audio-quality", "0",
             "-o", output_path,
             "--no-playlist",
-            "--cookies", COOKIES_FILE,      # autenticação
-            "--js-runtimes", "deno",        # runtime JavaScript
+            "--cookies", COOKIES_FILE,
+            "--js-runtimes", "deno",
+            "--remote-components", "ejs:github",  # <-- CORREÇÃO ADICIONADA
             url
         ]
         subprocess.run(cmd, check=True, capture_output=True, timeout=300)
