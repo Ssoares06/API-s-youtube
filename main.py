@@ -10,7 +10,7 @@ import uvicorn
 
 app = FastAPI(title="YouTube Audio Downloader")
 
-# Caminho para o arquivo de cookies
+# Caminho para o arquivo de cookies (deve estar na raiz)
 COOKIES_FILE = "cookies.txt"
 
 class DownloadResponse(BaseModel):
@@ -35,8 +35,8 @@ async def download_audio(url: str = Query(..., description="URL do YouTube")):
             "--audio-quality", "0",
             "-o", output_path,
             "--no-playlist",
-            "--cookies", COOKIES_FILE,           # ← Adiciona os cookies
-            "--js-runtimes", "deno",              # ← Usa deno como runtime JS
+            "--cookies", COOKIES_FILE,      # autenticação
+            "--js-runtimes", "deno",        # runtime JavaScript
             url
         ]
         subprocess.run(cmd, check=True, capture_output=True, timeout=300)
